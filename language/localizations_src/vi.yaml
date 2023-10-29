@@ -1,0 +1,25 @@
+# Common
+success: "Thành công"
+error: "Thất bại"
+not_found: "Không tìm thấy"
+no_permission: "Bạn không đủ quyền truy cập"
+exist: "Tồn tại"
+bad_request: "Thông tin không đúng"
+missing_id: "Thiếu id"
+empty: ""
+
+# Token
+token_expired: "Token has expired"
+token_invalid: "Token is invalid"
+
+# Validate
+invalid_phone: "SDT không đúng định dạng"
+invalid_email: "Email không đúng định dạng"
+
+# User
+user_blocked: "Tài khoản đã bị khóa"
+user_incorrect: "Thông tin account không đúng"
+user_deleted: "Tài khoản đã bị xóa"
+user_otp_not_resend_yet: "Chưa được gửi lại"
+user_otp_incorrect: "Mã OTP không hợp lệ"
+user_otp_expired: "Mã OTP đã hết hiệu lực"

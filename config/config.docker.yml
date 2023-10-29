@@ -1,0 +1,45 @@
+api_info:
+  service: auth-service
+  version: 1.0.0
+  version_path: v1
+  http_port: 8080
+  grpc_port: 7080
+
+database:
+  driver: postgres
+  host: db
+  port: 5432
+  user: postgres
+  schema: public
+  password: pass
+  database: auth_db
+  sslmode: disable
+  max_idle_conns: 5
+  max_active_conns: 10
+  max_conn_timeout: 10m
+  debug_log: true
+
+redis:
+  host: redis
+  port: 6379
+  database: 9
+  rate_limit_database: 5
+  ttl: 259200s
+  pool_size: 100
+  password: ""
+  write_timeout: 600s # 600 seconds = 10 minutes
+  read_timeout: 600s  # 600 seconds = 10 minutes
+  dial_timeout: 600s  # 600 seconds = 10 minutes
+  tls_config:
+    insecure_skip_verify: true
+
+
+auth_config:
+  token:
+    secret_key: 12345678901234561234567890123456
+    access_token_duration: 24h
+    refresh_token_duration: 48h
+  otp:
+    expires_duration: 15m
+    resend_duration: 30s
+    entered_incorrectly_times: 5

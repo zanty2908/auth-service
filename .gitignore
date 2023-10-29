@@ -1,0 +1,5 @@
+# .env
+.env
+db-migrate.yml
+gcloud_storage_certificate.json
+redis-data
