@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"time"
 )
 
 const countUsers = `-- name: CountUsers :one
@@ -23,23 +22,22 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-    id, full_name, email, birthday, phone, country, password, address, status
+    id, full_name, email, phone, country, password, aud, role
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
-RETURNING id, created_at, updated_at, deleted_at, full_name, phone, country, email, birthday, avatar, password, address, gender, status
+RETURNING id, created_at, updated_at, deleted_at, full_name, phone, country, email, password, last_sign, role, aud
 `
 
 type CreateUserParams struct {
-	ID       string     `json:"id"`
-	FullName string     `json:"fullName"`
-	Email    *string    `json:"email"`
-	Birthday *time.Time `json:"birthday"`
-	Phone    string     `json:"phone"`
-	Country  string     `json:"country"`
-	Password *string    `json:"password"`
-	Address  *string    `json:"address"`
-	Status   int16      `json:"status"`
+	ID       string  `json:"id"`
+	FullName string  `json:"fullName"`
+	Email    *string `json:"email"`
+	Phone    string  `json:"phone"`
+	Country  string  `json:"country"`
+	Password *string `json:"password"`
+	Aud      string  `json:"aud"`
+	Role     string  `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User, error) {
@@ -47,12 +45,11 @@ func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User,
 		arg.ID,
 		arg.FullName,
 		arg.Email,
-		arg.Birthday,
 		arg.Phone,
 		arg.Country,
 		arg.Password,
-		arg.Address,
-		arg.Status,
+		arg.Aud,
+		arg.Role,
 	)
 	var i User
 	err := row.Scan(
@@ -64,18 +61,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User,
 		&i.Phone,
 		&i.Country,
 		&i.Email,
-		&i.Birthday,
-		&i.Avatar,
 		&i.Password,
-		&i.Address,
-		&i.Gender,
-		&i.Status,
+		&i.LastSign,
+		&i.Role,
+		&i.Aud,
 	)
 	return &i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, birthday, avatar, password, address, gender, status FROM users
+SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, password, last_sign, role, aud FROM users
 WHERE id = $1 LIMIT 1
 FOR NO KEY UPDATE
 `
@@ -92,24 +87,27 @@ func (q *Queries) GetUser(ctx context.Context, id string) (*User, error) {
 		&i.Phone,
 		&i.Country,
 		&i.Email,
-		&i.Birthday,
-		&i.Avatar,
 		&i.Password,
-		&i.Address,
-		&i.Gender,
-		&i.Status,
+		&i.LastSign,
+		&i.Role,
+		&i.Aud,
 	)
 	return &i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, birthday, avatar, password, address, gender, status FROM users
-WHERE email = $1 LIMIT 1
+SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, password, last_sign, role, aud FROM users
+WHERE email = $1 AND aud = $2 LIMIT 1
 FOR NO KEY UPDATE
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (*User, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
+type GetUserByEmailParams struct {
+	Email *string `json:"email"`
+	Aud   string  `json:"aud"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, arg *GetUserByEmailParams) (*User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, arg.Email, arg.Aud)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -120,24 +118,28 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (*User, err
 		&i.Phone,
 		&i.Country,
 		&i.Email,
-		&i.Birthday,
-		&i.Avatar,
 		&i.Password,
-		&i.Address,
-		&i.Gender,
-		&i.Status,
+		&i.LastSign,
+		&i.Role,
+		&i.Aud,
 	)
 	return &i, err
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, birthday, avatar, password, address, gender, status FROM users
-WHERE phone = $1 LIMIT 1
+SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, password, last_sign, role, aud FROM users
+WHERE phone = $1 AND aud = $2
+LIMIT 1
 FOR NO KEY UPDATE
 `
 
-func (q *Queries) GetUserByPhone(ctx context.Context, phone string) (*User, error) {
-	row := q.db.QueryRow(ctx, getUserByPhone, phone)
+type GetUserByPhoneParams struct {
+	Phone string `json:"phone"`
+	Aud   string `json:"aud"`
+}
+
+func (q *Queries) GetUserByPhone(ctx context.Context, arg *GetUserByPhoneParams) (*User, error) {
+	row := q.db.QueryRow(ctx, getUserByPhone, arg.Phone, arg.Aud)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -148,18 +150,16 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phone string) (*User, erro
 		&i.Phone,
 		&i.Country,
 		&i.Email,
-		&i.Birthday,
-		&i.Avatar,
 		&i.Password,
-		&i.Address,
-		&i.Gender,
-		&i.Status,
+		&i.LastSign,
+		&i.Role,
+		&i.Aud,
 	)
 	return &i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, birthday, avatar, password, address, gender, status FROM users
+SELECT id, created_at, updated_at, deleted_at, full_name, phone, country, email, password, last_sign, role, aud FROM users
 ORDER BY id
 LIMIT $1 
 OFFSET $2
@@ -188,12 +188,10 @@ func (q *Queries) ListUsers(ctx context.Context, arg *ListUsersParams) ([]*User,
 			&i.Phone,
 			&i.Country,
 			&i.Email,
-			&i.Birthday,
-			&i.Avatar,
 			&i.Password,
-			&i.Address,
-			&i.Gender,
-			&i.Status,
+			&i.LastSign,
+			&i.Role,
+			&i.Aud,
 		); err != nil {
 			return nil, err
 		}
@@ -211,39 +209,24 @@ SET
     updated_at = now(),
     full_name = COALESCE($1, full_name),
     email = COALESCE($2, email),
-    birthday = COALESCE($3, birthday),
-    avatar = COALESCE($4, avatar),
-    password = COALESCE($5, password),
-    address = COALESCE($6, address),
-    gender = COALESCE($7, gender),
-    status = COALESCE($8, status)
+    password = COALESCE($3, password)
 WHERE 
-    id = $9
-RETURNING id, created_at, updated_at, deleted_at, full_name, phone, country, email, birthday, avatar, password, address, gender, status
+    id = $4
+RETURNING id, created_at, updated_at, deleted_at, full_name, phone, country, email, password, last_sign, role, aud
 `
 
 type UpdateUserParams struct {
-	FullName *string    `json:"fullName"`
-	Email    *string    `json:"email"`
-	Birthday *time.Time `json:"birthday"`
-	Avatar   *string    `json:"avatar"`
-	Password *string    `json:"password"`
-	Address  *string    `json:"address"`
-	Gender   *int16     `json:"gender"`
-	Status   *int16     `json:"status"`
-	ID       string     `json:"id"`
+	FullName *string `json:"fullName"`
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
+	ID       string  `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg *UpdateUserParams) (*User, error) {
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.FullName,
 		arg.Email,
-		arg.Birthday,
-		arg.Avatar,
 		arg.Password,
-		arg.Address,
-		arg.Gender,
-		arg.Status,
 		arg.ID,
 	)
 	var i User
@@ -256,12 +239,10 @@ func (q *Queries) UpdateUser(ctx context.Context, arg *UpdateUserParams) (*User,
 		&i.Phone,
 		&i.Country,
 		&i.Email,
-		&i.Birthday,
-		&i.Avatar,
 		&i.Password,
-		&i.Address,
-		&i.Gender,
-		&i.Status,
+		&i.LastSign,
+		&i.Role,
+		&i.Aud,
 	)
 	return &i, err
 }

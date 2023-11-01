@@ -7,31 +7,22 @@ import (
 
 	db "auth-service/db/gen"
 	"auth-service/utils"
-
-	kithttp "github.com/go-kit/kit/transport/http"
 )
-
-func (s *Module) GetUserEndpoint() *kithttp.Server {
-	return s.newHttpEndpoint(
-		s.getUser,
-		s.decodeGetUserRequest,
-	)
-}
 
 type GetUserByIdParams struct {
 	Id string
 }
 
 func (s *Module) decodeGetUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	customerId := r.Header.Get("customerId")
-	if customerId == "" {
+	payload, err := s.tokenMaker.GetTokenPayload(r)
+	if err != nil {
 		return nil, utils.ErrorBadRequest
 	}
-	return GetUserByIdParams{Id: customerId}, nil
+	return GetUserByIdParams{Id: payload.Subject}, nil
 }
 
-func (s *Module) getUser(c context.Context, request interface{}) (interface{}, error) {
-	req := request.(GetUserByIdParams)
+func (s *Module) UserGet(c context.Context, request interface{}) (interface{}, error) {
+	req := request.(*GetUserByIdParams)
 
 	user, err := s.repo.GetUser(c, req.Id)
 	if err != nil {
@@ -47,13 +38,11 @@ type UserResponse struct {
 	UpdatedAt time.Time  `json:"updatedAt"`
 	FullName  string     `json:"fullName"`
 	Phone     string     `json:"phone"`
-	Country   string     `json:"country"`
-	Email     *string    `json:"email"`
-	Birthday  *time.Time `json:"birthday"`
-	Avatar    *string    `json:"avatar"`
-	Address   *string    `json:"address"`
-	Gender    *int16     `json:"gender"`
-	Status    int16      `json:"status"`
+	Country   string     `json:"country,omitempty"`
+	Email     *string    `json:"email,omitempty"`
+	LastSign  *time.Time `json:"lastSign,omitempty"`
+	Role      string     `json:"role,omitempty"`
+	Aud       string     `json:"aud,omitempty"`
 }
 
 func mapUserResponse(item *db.User) *UserResponse {
@@ -68,10 +57,8 @@ func mapUserResponse(item *db.User) *UserResponse {
 		Phone:     item.Phone,
 		Country:   item.Country,
 		Email:     item.Email,
-		Birthday:  item.Birthday,
-		Avatar:    item.Avatar,
-		Address:   item.Address,
-		Gender:    item.Gender,
-		Status:    item.Status,
+		LastSign:  item.LastSign,
+		Role:      item.Role,
+		Aud:       item.Aud,
 	}
 }

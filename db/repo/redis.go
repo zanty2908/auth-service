@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 )
 
 type Caching interface {
@@ -28,10 +27,6 @@ func NewRedisClient(config *config.Config) *redis.Client {
 		// ReadTimeout:  redisCfg.ReadTimeout,
 		// DialTimeout:  redisCfg.DialTimeout,
 	})
-
-	ctx := context.Background()
-	res, err := rdb.Ping(ctx).Result()
-	log.Info().Msgf("Connect redis: %s - err: %v - instance: %v", res, err, rdb)
 
 	return rdb
 }

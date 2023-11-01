@@ -4,9 +4,23 @@ error: "Failed"
 not_found: "Cannot found"
 no_permission: "Missing permissions"
 exist: "Has exist"
-bad_request: "Missing parameters"
 missing_id: "Missing ID"
 empty: ""
+
+# HTTP code error
+bad_request: "Missing parameters"
+unauthorized_client: "Unauthorized client"
+access_denied: "Access denied"
+server_error: "something went wrong. Please try again!"
+temporarily_unavailable: "Temporarily unavailable"
+
+# OTP
+otp_not_resend_yet: "Not resend yet"
+otp_incorrect: "OTP is not valid"
+otp_expired: "OTP has expired"
+audience_missing: "Missing user audience"
+platform_missing: "Missing user platform"
+user_type_unsupported: "User type is not support"
 
 # Token
 token_expired: "Token has expired"
@@ -20,6 +34,3 @@ invalid_email: "Incorrect email format"
 user_blocked: "This account has been blocked"
 user_incorrect: "Incorrect Email Or Password. Please try again!"
 user_deleted: "Your accout has been deleted"
-user_otp_not_resend_yet: "Not resend yet"
-user_otp_incorrect: "OTP is not valid"
-user_otp_expired: "OTP has expired"

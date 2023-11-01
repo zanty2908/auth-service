@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/rs/zerolog/log"
 )
 
 func Authen(sv *server.Server) func(next http.Handler) http.Handler {
@@ -28,18 +26,8 @@ func Authen(sv *server.Server) func(next http.Handler) http.Handler {
 				return
 			}
 
-			payloadData := payload.Data
-
-			if data, ok := payloadData.(map[string]interface{}); ok {
-				for k, v := range data {
-					r.Header.Add(k, fmt.Sprint(v))
-				}
-			} else {
-				jsonData, err := json.Marshal(payloadData)
-				if err != nil {
-					log.Err(err).Msg("Auth Middleware: get data from payload error")
-				}
-				r.Header.Add("data", string(jsonData))
+			for k, v := range payload.Data {
+				r.Header.Add(k, fmt.Sprint(v))
 			}
 
 			next.ServeHTTP(w, r)

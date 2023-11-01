@@ -25,22 +25,38 @@ func randomUser(t *testing.T) *db.User {
 	random := utils.NewUtilRandom()
 	hashedPassword, err := utils.HashPassword(random.RandomString(6))
 	require.NoError(t, err)
-	birDay := random.RandomBirthday()
 	email := random.RandomEmail()
 	customer := &db.User{
 		ID:       uuid.New().String(),
 		FullName: random.RandomName(),
 		Email:    &email,
-		Birthday: &birDay,
 		Phone:    random.RandomPhone(),
 		Password: &hashedPassword,
-		Address:  random.RandomStringP(30),
 	}
 	return customer
 }
 
-func TestSendOTPAPI(t *testing.T) {
+type UserType string
 
+const (
+	UserTypeUser   UserType = "user"
+	UserTypeDriver UserType = "driver"
+	UserTypeAdmin  UserType = "admin"
+)
+
+func (e *UserType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserType(s)
+	case string:
+		*e = UserType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserType: %T", src)
+	}
+	return nil
+}
+
+func TestSendOTPAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		phone         string
@@ -63,6 +79,9 @@ func TestSendOTPAPI(t *testing.T) {
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
+				res := requireBodyMatchUser(t, recorder.Body)
+				require.NotNil(t, res)
+				require.NotZero(t, res.ID)
 			},
 		},
 		{
@@ -80,41 +99,42 @@ func TestSendOTPAPI(t *testing.T) {
 					}, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+				res := requireBodyMatchError(t, recorder.Body)
+				require.NotNil(t, res)
+				require.NotNil(t, res.Meta)
+				require.Equal(t, http.StatusBadRequest, res.Meta.Code)
 			},
 		},
-		// {
-		// 	name:       "NotFound",
-		// 	customerId: customer.ID,
-		// 	buildStubs: func(store *mockrepo.MockRepo) {
-		// 		store.EXPECT().
-		// 			GetUser(gomock.Any(), gomock.Eq(customer.ID)).
-		// 			Times(1).
-		// 			Return(nil, sql.ErrNoRows)
-		// 	},
-		// 	checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-		// 		require.Equal(t, http.StatusOK, recorder.Code)
-		// 		result := requireBodyMatchError(t, recorder.Body)
-		// 		require.Nil(t, result.Data)
-		// 		require.NotEmpty(t, result.Message)
-		// 	},
-		// },
-		// {
-		// 	name:       "InternalError",
-		// 	customerId: customer.ID,
-		// 	buildStubs: func(store *mockrepo.MockRepo) {
-		// 		store.EXPECT().
-		// 			GetUser(gomock.Any(), gomock.Eq(customer.ID)).
-		// 			Times(1).
-		// 			Return(nil, sql.ErrConnDone)
-		// 	},
-		// 	checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-		// 		require.Equal(t, http.StatusOK, recorder.Code)
-		// 		result := requireBodyMatchError(t, recorder.Body)
-		// 		require.Nil(t, result.Data)
-		// 		require.NotEmpty(t, result.Message)
-		// 	},
-		// },
+		{
+			name:       "Invalid phone",
+			phone:      "0909000999",
+			buildStubs: func(store *mockrepo.MockRepo) {},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+				res := requireBodyMatchError(t, recorder.Body)
+				require.NotNil(t, res)
+				require.NotNil(t, res.Meta)
+				require.Equal(t, http.StatusBadRequest, res.Meta.Code)
+			},
+		},
+		{
+			name:  "InternalError",
+			phone: "+84909000999",
+			buildStubs: func(store *mockrepo.MockRepo) {
+				store.EXPECT().
+					GetOTPAuth(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(nil, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+				res := requireBodyMatchError(t, recorder.Body)
+				require.NotNil(t, res)
+				require.NotNil(t, res.Meta)
+				require.Equal(t, http.StatusInternalServerError, res.Meta.Code)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -321,9 +341,11 @@ func TestListUserAPI(t *testing.T) {
 
 func requireBodyMatchUser(t *testing.T, body *bytes.Buffer) *db.User {
 	var res struct {
-		StatusCode int      `json:"code"`
-		Message    string   `json:"message"`
-		Data       *db.User `json:"data,omitempty"`
+		Meta *struct {
+			Code    int    `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+		} `json:"meta,omitempty"`
+		Data *db.User `json:"data,omitempty"`
 	}
 	err := json.NewDecoder(body).Decode(&res)
 	require.NoError(t, err)

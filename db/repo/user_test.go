@@ -15,17 +15,14 @@ func createRandomUser(t *testing.T) *db.User {
 	hashedPassword, err := utils.HashPassword(random.RandomString(6))
 	require.NoError(t, err)
 
-	birDay := random.RandomBirthday()
 	email := random.RandomEmail()
 
 	arg := &db.CreateUserParams{
 		ID:       uuid.New().String(),
 		FullName: random.RandomName(),
 		Email:    &email,
-		Birthday: &birDay,
 		Phone:    random.RandomPhone(),
 		Password: &hashedPassword,
-		Address:  random.RandomStringP(30),
 	}
 
 	user, err := testQueries.CreateUser(context.Background(), arg)
@@ -37,7 +34,6 @@ func createRandomUser(t *testing.T) *db.User {
 	require.Equal(t, arg.Email, user.Email)
 	require.Equal(t, arg.Phone, user.Phone)
 	require.Equal(t, arg.Password, user.Password)
-	require.Equal(t, arg.Address, user.Address)
 	require.NotZero(t, user.CreatedAt)
 
 	return user
@@ -65,7 +61,6 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user1.Email, user2.Email)
 	require.Equal(t, user1.Phone, user2.Phone)
 	require.Equal(t, user1.Password, user2.Password)
-	require.Equal(t, user1.Address, user2.Address)
 	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
 	require.WithinDuration(t, user1.UpdatedAt, user2.UpdatedAt, time.Second)
 }
@@ -137,8 +132,6 @@ func TestUpdateUserAllFields(t *testing.T) {
 	newEmail := random.RandomEmail()
 	newPassword := random.RandomString(6)
 	newHashedPassword, err := utils.HashPassword(newPassword)
-	newAvatar := random.RandomString(30)
-	newAddress := random.RandomString(30)
 	require.NoError(t, err)
 
 	updatedUser, err := testQueries.UpdateUser(
@@ -148,8 +141,6 @@ func TestUpdateUserAllFields(t *testing.T) {
 			FullName: &newFullName,
 			Email:    &newEmail,
 			Password: &newHashedPassword,
-			Avatar:   &newAvatar,
-			Address:  &newAddress,
 		},
 	)
 
@@ -160,10 +151,6 @@ func TestUpdateUserAllFields(t *testing.T) {
 	require.Equal(t, newEmail, updatedUser.Email)
 	require.NotEqual(t, oldUser.FullName, updatedUser.FullName)
 	require.Equal(t, newFullName, updatedUser.FullName)
-	require.NotEqual(t, oldUser.Avatar, updatedUser.Avatar)
-	require.Equal(t, newAvatar, *updatedUser.Avatar)
-	require.NotEqual(t, oldUser.Address, updatedUser.Address)
-	require.Equal(t, newAddress, updatedUser.Address)
 }
 
 func TestListUsers(t *testing.T) {

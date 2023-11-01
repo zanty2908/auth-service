@@ -1,8 +1,8 @@
 -- name: CreateOAuthToken :one
 INSERT INTO oauth_tokens (
-    token_id, user_id, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at
+    token_id, aud, platform, user_id, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING *;
 

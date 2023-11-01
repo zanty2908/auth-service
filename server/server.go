@@ -18,7 +18,8 @@ type Server struct {
 
 func NewServer(config *config.Config, repo repo.Repo, multiLocalizer *language.MultiLocalizer) (*Server, error) {
 	cfgToken := config.Auth.Token
-	tokenMaker, err := token.NewJWTMaker(cfgToken.SecretKey, cfgToken.AccessTokenDuration, cfgToken.RefreshTokenDuration)
+
+	userTokenMaker, err := token.NewJWTMaker(cfgToken.SecretKey, cfgToken.AccessTokenDuration, cfgToken.RefreshTokenDuration)
 	if err != nil {
 		log.Err(err).Msg("Create customer token maker error")
 		return nil, err
@@ -27,7 +28,7 @@ func NewServer(config *config.Config, repo repo.Repo, multiLocalizer *language.M
 	return &Server{
 		Config:         config,
 		Repo:           repo,
-		TokenMaker:     tokenMaker,
+		TokenMaker:     userTokenMaker,
 		MultiLocalizer: multiLocalizer,
 	}, nil
 }

@@ -10,19 +10,25 @@ import (
 // Different types of error returned by the VerifyToken function
 var (
 	ErrInvalidToken = errors.New("token is invalid")
-	ErrExpiredToken = errors.New("token has expired")
+	ErrExpiredToken = errors.New("token is expired")
 )
 
 // Payload contains the payload data of the token
 type Payload struct {
-	ID        string      `json:"id"`
-	IssuedAt  time.Time   `json:"iat"`
-	ExpiresAt time.Time   `json:"exp"`
-	Data      interface{} `json:"data"`
+	Id        string                 `json:"jti,omitempty"`
+	Audience  string                 `json:"aud,omitempty"`
+	Platform  string                 `json:"platform,omitempty"`
+	ExpiresAt time.Time              `json:"exp,omitempty"`
+	IssuedAt  time.Time              `json:"iat,omitempty"`
+	Subject   string                 `json:"sub,omitempty"`
+	Role      string                 `json:"role,omitempty"`
+	Data      map[string]interface{} `json:"data,omitempty"`
+	Email     string                 `json:"email,omitempty"`
+	Phone     string                 `json:"phone,omitempty"`
 }
 
 // NewPayload creates a new token payload with a specific username and duration
-func NewPayload(data interface{}, duration time.Duration, id *string) (*Payload, error) {
+func NewPayload(aud Audience, platform Platform, userId, role, email, phone string, data map[string]interface{}, expDuration time.Duration, id *string) (*Payload, error) {
 	var tokenID string
 	if id == nil {
 		newID, err := uuid.NewRandom()
@@ -34,11 +40,20 @@ func NewPayload(data interface{}, duration time.Duration, id *string) (*Payload,
 		tokenID = *id
 	}
 
+	curTime := time.Now()
+	expiresAt := curTime.Add(expDuration)
+
 	payload := &Payload{
-		ID:        tokenID,
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(duration),
+		Id:        tokenID,
+		Platform:  string(platform),
+		Audience:  string(aud),
+		ExpiresAt: expiresAt,
+		Subject:   userId,
+		IssuedAt:  curTime,
 		Data:      data,
+		Role:      role,
+		Email:     email,
+		Phone:     phone,
 	}
 	return payload, nil
 }

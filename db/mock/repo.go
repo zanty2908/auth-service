@@ -248,7 +248,7 @@ func (mr *MockRepoMockRecorder) GetUser(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // GetUserByEmail mocks base method.
-func (m *MockRepo) GetUserByEmail(arg0 context.Context, arg1 *string) (*db.User, error) {
+func (m *MockRepo) GetUserByEmail(arg0 context.Context, arg1 *db.GetUserByEmailParams) (*db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByEmail", arg0, arg1)
 	ret0, _ := ret[0].(*db.User)
@@ -263,7 +263,7 @@ func (mr *MockRepoMockRecorder) GetUserByEmail(arg0, arg1 interface{}) *gomock.C
 }
 
 // GetUserByPhone mocks base method.
-func (m *MockRepo) GetUserByPhone(arg0 context.Context, arg1 string) (*db.User, error) {
+func (m *MockRepo) GetUserByPhone(arg0 context.Context, arg1 *db.GetUserByPhoneParams) (*db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByPhone", arg0, arg1)
 	ret0, _ := ret[0].(*db.User)
@@ -320,6 +320,20 @@ func (m *MockRepo) Set(arg0 context.Context, arg1 string, arg2 interface{}, arg3
 func (mr *MockRepoMockRecorder) Set(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockRepo)(nil).Set), arg0, arg1, arg2, arg3)
+}
+
+// UpdateEnteredTime mocks base method.
+func (m *MockRepo) UpdateEnteredTime(arg0 context.Context, arg1 *db.UpdateEnteredTimeParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEnteredTime", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEnteredTime indicates an expected call of UpdateEnteredTime.
+func (mr *MockRepoMockRecorder) UpdateEnteredTime(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnteredTime", reflect.TypeOf((*MockRepo)(nil).UpdateEnteredTime), arg0, arg1)
 }
 
 // UpdateUser mocks base method.

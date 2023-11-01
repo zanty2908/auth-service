@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/rs/zerolog/log"
 )
 
 const minSecretKeySize = 32
@@ -34,6 +35,7 @@ func (s *JWTMaker) GetTokenPayload(r *http.Request) (*Payload, error) {
 	accessToken := fields[1]
 	payload, err := s.VerifyToken(accessToken)
 	if err != nil {
+		log.Err(err).Msg("GetTokenPayload error")
 		return nil, err
 	}
 
@@ -58,9 +60,9 @@ func NewJWTMaker(secretKey string, accessDuration, refreshDuration time.Duration
 }
 
 // CreateToken creates a new token for a specific username and duration
-func (maker *JWTMaker) CreateTokenPair(data interface{}) (string, string, *Payload, *Payload, error) {
+func (maker *JWTMaker) CreateTokenPair(aud Audience, platform Platform, userId, role, email, phone string, data map[string]interface{}) (string, string, *Payload, *Payload, error) {
 	// Generate access token
-	accessPayload, err := NewPayload(data, maker.accessDuration, nil)
+	accessPayload, err := NewPayload(aud, platform, userId, role, email, phone, data, maker.accessDuration, nil)
 	if err != nil {
 		return "", "", accessPayload, nil, err
 	}
@@ -69,7 +71,7 @@ func (maker *JWTMaker) CreateTokenPair(data interface{}) (string, string, *Paylo
 	token, err := jwtAccessToken.SignedString([]byte(maker.accessKey))
 
 	// Generate refresh token
-	refreshPayload, err := NewPayload(data, maker.refreshDuration, &accessPayload.ID)
+	refreshPayload, err := NewPayload(aud, platform, userId, role, email, phone, data, maker.refreshDuration, &accessPayload.Id)
 	if err != nil {
 		return "", "", accessPayload, refreshPayload, err
 	}
@@ -78,17 +80,6 @@ func (maker *JWTMaker) CreateTokenPair(data interface{}) (string, string, *Paylo
 	refreshToken, err := jwtRefreshToken.SignedString([]byte(maker.refreshKey))
 
 	return token, refreshToken, accessPayload, refreshPayload, err
-}
-
-func (maker *JWTMaker) CreateTokenWithKey(key string, data interface{}, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(data, duration, nil)
-	if err != nil {
-		return "", payload, err
-	}
-
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	token, err := jwtToken.SignedString([]byte(key))
-	return token, payload, err
 }
 
 // VerifyToken checks if the token is valid or not
@@ -125,32 +116,6 @@ func (maker *JWTMaker) VerifyRefreshToken(token string) (*Payload, error) {
 			return nil, ErrInvalidToken
 		}
 		return []byte(maker.refreshKey), nil
-	}
-
-	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, keyFunc)
-	if err != nil {
-		verr, ok := err.(*jwt.ValidationError)
-		if ok && errors.Is(verr.Inner, ErrExpiredToken) {
-			return nil, ErrExpiredToken
-		}
-		return nil, ErrInvalidToken
-	}
-
-	payload, ok := jwtToken.Claims.(*Payload)
-	if !ok {
-		return nil, ErrInvalidToken
-	}
-
-	return payload, nil
-}
-
-func (maker *JWTMaker) VerifyTokenWithKey(key, token string) (*Payload, error) {
-	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, ErrInvalidToken
-		}
-		return []byte(key), nil
 	}
 
 	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, keyFunc)

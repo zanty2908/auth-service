@@ -22,3 +22,20 @@ func TestValidatePhone(t *testing.T) {
 	}
 
 }
+
+func TestValidateEmail(t *testing.T) {
+
+	testList := map[string]bool{
+		"abc@mail.com":                 true,
+		"abc@gmail":                    true,
+		"example@.com":                 false,
+		"example@example.com":          true,
+		"example":                      false,
+		"Barry Gibbs <bg@example.com>": true,
+	}
+
+	for email, expected := range testList {
+		valid := ValidateEmail(email)
+		require.Equal(t, expected, valid, "Error: "+email)
+	}
+}

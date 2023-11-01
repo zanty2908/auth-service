@@ -12,16 +12,18 @@ import (
 
 const createOAuthToken = `-- name: CreateOAuthToken :one
 INSERT INTO oauth_tokens (
-    token_id, user_id, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at
+    token_id, aud, platform, user_id, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
-RETURNING token_id, user_id, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at, created_at, deleted_at
+RETURNING token_id, aud, user_id, platform, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at, created_at, deleted_at
 `
 
 type CreateOAuthTokenParams struct {
 	TokenID          string    `json:"tokenId"`
-	UserID           *string   `json:"userId"`
+	Aud              string    `json:"aud"`
+	Platform         string    `json:"platform"`
+	UserID           string    `json:"userId"`
 	DeviceID         *string   `json:"deviceId"`
 	AccessToken      string    `json:"accessToken"`
 	RefreshToken     string    `json:"refreshToken"`
@@ -32,6 +34,8 @@ type CreateOAuthTokenParams struct {
 func (q *Queries) CreateOAuthToken(ctx context.Context, arg *CreateOAuthTokenParams) (*OauthToken, error) {
 	row := q.db.QueryRow(ctx, createOAuthToken,
 		arg.TokenID,
+		arg.Aud,
+		arg.Platform,
 		arg.UserID,
 		arg.DeviceID,
 		arg.AccessToken,
@@ -42,7 +46,9 @@ func (q *Queries) CreateOAuthToken(ctx context.Context, arg *CreateOAuthTokenPar
 	var i OauthToken
 	err := row.Scan(
 		&i.TokenID,
+		&i.Aud,
 		&i.UserID,
+		&i.Platform,
 		&i.DeviceID,
 		&i.AccessToken,
 		&i.RefreshToken,
@@ -66,7 +72,7 @@ func (q *Queries) DeleteOAuthToken(ctx context.Context, tokenID string) error {
 }
 
 const getOAuthToken = `-- name: GetOAuthToken :one
-SELECT token_id, user_id, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at, created_at, deleted_at 
+SELECT token_id, aud, user_id, platform, device_id, access_token, refresh_token, access_expires_at, refresh_expires_at, created_at, deleted_at 
 FROM oauth_tokens 
 WHERE token_id = $1 AND deleted_at is null
 ORDER BY created_at DESC
@@ -78,7 +84,9 @@ func (q *Queries) GetOAuthToken(ctx context.Context, tokenID string) (*OauthToke
 	var i OauthToken
 	err := row.Scan(
 		&i.TokenID,
+		&i.Aud,
 		&i.UserID,
+		&i.Platform,
 		&i.DeviceID,
 		&i.AccessToken,
 		&i.RefreshToken,

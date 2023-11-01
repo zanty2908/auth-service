@@ -15,6 +15,7 @@ import (
 	"auth-service/language"
 	"auth-service/server"
 	"auth-service/token"
+	"auth-service/transport"
 	"auth-service/utils"
 
 	"github.com/stretchr/testify/require"
@@ -54,10 +55,11 @@ func newTestHttpHandler(t *testing.T, repo repo.Repo, tokenKey *string) http.Han
 	tokenMaker, err := token.NewJWTMaker(cfgToken.SecretKey, cfgToken.AccessTokenDuration, cfgToken.RefreshTokenDuration)
 	require.NoError(t, err)
 
-	ep := endpoint.NewEndpointModule(config, repo, &multiLocalizer, tokenMaker)
+	ep := endpoint.NewEndpointModule(config, repo, tokenMaker)
 
 	server, _ := server.NewServer(config, repo, &multiLocalizer)
-	return NewHttpRouter(server, ep)
+	trans := transport.NewModule(config, repo, &multiLocalizer, server.TokenMaker, ep)
+	return NewHttpRouter(server, trans, ep)
 }
 
 func newTestServer(t *testing.T, repo repo.Repo) *server.Server {
@@ -82,7 +84,15 @@ func newAuthToken(t *testing.T) (tokenKey, authorizationHeader string) {
 	tokenMaker, err := token.NewJWTMaker(tokenKey, time.Minute, time.Hour)
 	require.NoError(t, err)
 
-	accressToken, _, _, _, err := tokenMaker.CreateTokenPair(random.RandomString(12))
+	accressToken, _, _, _, err := tokenMaker.CreateTokenPair(
+		token.USER_APP,
+		token.ANDROID,
+		random.RandomString(12),
+		random.RandomString(10),
+		random.RandomEmail(),
+		random.RandomPhone(),
+		make(map[string]interface{}, 0),
+	)
 	require.NoError(t, err)
 	authorizationHeader = fmt.Sprintf("Bearer %s", accressToken)
 	return

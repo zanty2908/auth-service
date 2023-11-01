@@ -27,7 +27,15 @@ func TestJWTMaker(t *testing.T) {
 		"phone": phone,
 	}
 
-	accessToken, refreshToken, accessPayload, refreshPayload, err := maker.CreateTokenPair(data)
+	accessToken, refreshToken, accessPayload, refreshPayload, err := maker.CreateTokenPair(
+		USER_APP,
+		ANDROID,
+		random.RandomString(12),
+		random.RandomString(10),
+		random.RandomEmail(),
+		random.RandomPhone(),
+		data,
+	)
 	require.NoError(t, err)
 	require.NotEmpty(t, accessToken)
 	require.NotEmpty(t, refreshToken)
@@ -38,21 +46,21 @@ func TestJWTMaker(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, payload)
 	require.NotZero(t, payload.ExpiresAt)
-	require.NotZero(t, payload.ID)
+	require.NotZero(t, payload.Id)
 	require.Equal(t, data, payload.Data)
 	require.WithinDuration(t, issuedAt, payload.IssuedAt, time.Second)
 	require.WithinDuration(t, accessExpiresAt, payload.ExpiresAt, time.Second)
-	require.Equal(t, payload.ID, accessPayload.ID)
+	require.Equal(t, payload.Id, accessPayload.Id)
 
 	rePayload, err := maker.VerifyRefreshToken(refreshToken)
 	require.NoError(t, err)
 	require.NotNil(t, rePayload)
 	require.NotZero(t, rePayload.ExpiresAt)
-	require.NotZero(t, rePayload.ID)
+	require.NotZero(t, rePayload.Id)
 	require.Equal(t, data, rePayload.Data)
 	require.WithinDuration(t, issuedAt, rePayload.IssuedAt, time.Second)
 	require.WithinDuration(t, refreshExpiresAt, rePayload.ExpiresAt, time.Second)
-	require.Equal(t, refreshPayload.ID, rePayload.ID)
+	require.Equal(t, refreshPayload.Id, rePayload.Id)
 }
 
 func TestExpiredJWTToken(t *testing.T) {
@@ -60,7 +68,15 @@ func TestExpiredJWTToken(t *testing.T) {
 	maker, err := NewJWTMaker(random.RandomString(32), -time.Minute, -time.Hour)
 	require.NoError(t, err)
 
-	accessToken, refreshToken, accessPayload, refreshPayload, err := maker.CreateTokenPair(random.RandomString(12))
+	accessToken, refreshToken, accessPayload, refreshPayload, err := maker.CreateTokenPair(
+		USER_APP,
+		ANDROID,
+		random.RandomString(12),
+		random.RandomString(10),
+		random.RandomEmail(),
+		random.RandomPhone(),
+		make(map[string]interface{}, 0),
+	)
 	require.NoError(t, err)
 	require.NotEmpty(t, accessToken)
 	require.NotEmpty(t, accessPayload)
@@ -80,7 +96,17 @@ func TestExpiredJWTToken(t *testing.T) {
 
 func TestInvalidJWTTokenAlgNone(t *testing.T) {
 	random := utils.NewUtilRandom()
-	payload, err := NewPayload(random.RandomString(12), time.Minute, nil)
+
+	payload, err := NewPayload(
+		USER_APP,
+		ANDROID,
+		random.RandomString(12),
+		random.RandomString(10),
+		random.RandomEmail(),
+		random.RandomPhone(),
+		make(map[string]interface{}, 0),
+		time.Minute, nil,
+	)
 	require.NoError(t, err)
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodNone, payload)

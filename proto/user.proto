@@ -5,7 +5,15 @@ package service;
 option go_package = "/service";
 
 service UserService {
-  rpc GetUser(GetUserRequest) returns (User) {}
+  // Authentication
+  rpc SendOTP(SendOTPReq) returns (SimpleRes) {}
+  rpc ConfirmOTP(ConfirmOTPReq) returns (ConfirmOTPRes) {}
+  rpc ValidateToken(ValidateTokenReq) returns (SimpleRes) {}
+  rpc RefreshToken(RefreshTokenReq) returns (RefreshTokenRes) {}
+  
+  // User
+  rpc GetUser(GetUserReq) returns (User) {}
+  rpc UpdateUser(UpdateUserReq) returns (User) {}
 }
 
 message User {
@@ -13,12 +21,62 @@ message User {
   string phone = 2;
   string email = 3;
   string fullName = 4;
-  string address = 5;
-  string country = 6;
+  string country = 5;
+  string aud = 6;
+  string role = 7;
 }
 
-message GetUserRequest {
+message GetUserReq {
   string id = 1;
   string phone = 2;
   string email = 3;
+  string language = 4;
+}
+
+message SendOTPReq {
+  string aud = 1;
+  string phone = 2;
+  string platform = 3;
+  string language = 4;
+}
+
+message ConfirmOTPReq {
+  string aud = 1;
+  string otp = 2;
+  string phone = 3;
+  string platform = 4;
+  string language = 5;
+}
+
+message ConfirmOTPRes {
+  string accessToken = 1;
+  string refreshToken = 2;
+  User user = 3;
+}
+
+message ValidateTokenReq {
+  string aud = 1;
+  string token = 2;
+  string language = 3;
+}
+
+message SimpleRes {
+  string data = 1;
+}
+
+message RefreshTokenReq {
+  string token = 1;
+  string language = 2;
+}
+
+message RefreshTokenRes {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
+
+message UpdateUserReq {
+  string id = 1;
+  string fullName = 2;
+  string email = 3;
+  string language = 4;
 }

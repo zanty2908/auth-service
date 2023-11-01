@@ -10,7 +10,9 @@ import (
 
 type OauthToken struct {
 	TokenID          string     `json:"tokenId"`
-	UserID           *string    `json:"userId"`
+	Aud              string     `json:"aud"`
+	UserID           string     `json:"userId"`
+	Platform         string     `json:"platform"`
 	DeviceID         *string    `json:"deviceId"`
 	AccessToken      string     `json:"accessToken"`
 	RefreshToken     string     `json:"refreshToken"`
@@ -21,13 +23,17 @@ type OauthToken struct {
 }
 
 type OtpAuthentication struct {
-	ID        int32      `json:"id"`
-	Phone     string     `json:"phone"`
-	Otp       string     `json:"otp"`
-	ResendAt  time.Time  `json:"resendAt"`
-	ExpiresAt time.Time  `json:"expiresAt"`
-	CreatedAt time.Time  `json:"createdAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	ID           int32      `json:"id"`
+	Aud          string     `json:"aud"`
+	Platform     string     `json:"platform"`
+	Phone        string     `json:"phone"`
+	Otp          string     `json:"otp"`
+	EnteredTimes int16      `json:"enteredTimes"`
+	ResendAt     time.Time  `json:"resendAt"`
+	ExpiresAt    time.Time  `json:"expiresAt"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+	DeletedAt    *time.Time `json:"deletedAt"`
 }
 
 type User struct {
@@ -39,10 +45,8 @@ type User struct {
 	Phone     string     `json:"phone"`
 	Country   string     `json:"country"`
 	Email     *string    `json:"email"`
-	Birthday  *time.Time `json:"birthday"`
-	Avatar    *string    `json:"avatar"`
 	Password  *string    `json:"password"`
-	Address   *string    `json:"address"`
-	Gender    *int16     `json:"gender"`
-	Status    int16      `json:"status"`
+	LastSign  *time.Time `json:"lastSign"`
+	Role      string     `json:"role"`
+	Aud       string     `json:"aud"`
 }

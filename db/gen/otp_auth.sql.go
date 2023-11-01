@@ -11,35 +11,41 @@ import (
 )
 
 const createOTPAuth = `-- name: CreateOTPAuth :one
-INSERT INTO otp_authentications(phone, otp, resend_at, expires_at, created_at)
-VALUES($1, $2, $3, $4, $5)
-RETURNING id, phone, otp, resend_at, expires_at, created_at, deleted_at
+INSERT INTO otp_authentications(aud, platform, phone, otp, resend_at, expires_at)
+VALUES($1, $2, $3, $4, $5, $6)
+RETURNING id, aud, platform, phone, otp, entered_times, resend_at, expires_at, created_at, updated_at, deleted_at
 `
 
 type CreateOTPAuthParams struct {
+	Aud       string    `json:"aud"`
+	Platform  string    `json:"platform"`
 	Phone     string    `json:"phone"`
 	Otp       string    `json:"otp"`
 	ResendAt  time.Time `json:"resendAt"`
 	ExpiresAt time.Time `json:"expiresAt"`
-	CreatedAt time.Time `json:"createdAt"`
 }
 
 func (q *Queries) CreateOTPAuth(ctx context.Context, arg *CreateOTPAuthParams) (*OtpAuthentication, error) {
 	row := q.db.QueryRow(ctx, createOTPAuth,
+		arg.Aud,
+		arg.Platform,
 		arg.Phone,
 		arg.Otp,
 		arg.ResendAt,
 		arg.ExpiresAt,
-		arg.CreatedAt,
 	)
 	var i OtpAuthentication
 	err := row.Scan(
 		&i.ID,
+		&i.Aud,
+		&i.Platform,
 		&i.Phone,
 		&i.Otp,
+		&i.EnteredTimes,
 		&i.ResendAt,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.DeletedAt,
 	)
 	return &i, err
@@ -59,23 +65,30 @@ func (q *Queries) DeleteOTPAuthByID(ctx context.Context, id int32) error {
 const deleteOTPAuthByPhone = `-- name: DeleteOTPAuthByPhone :exec
 UPDATE otp_authentications
 SET deleted_at = now()
-WHERE phone = $1 AND expires_at > $2 AND deleted_at is null
+WHERE phone = $1 AND expires_at > $2 AND aud = $3 AND platform = $4 AND deleted_at is null
 `
 
 type DeleteOTPAuthByPhoneParams struct {
 	Phone     string    `json:"phone"`
 	ExpiresAt time.Time `json:"expiresAt"`
+	Aud       string    `json:"aud"`
+	Platform  string    `json:"platform"`
 }
 
 func (q *Queries) DeleteOTPAuthByPhone(ctx context.Context, arg *DeleteOTPAuthByPhoneParams) error {
-	_, err := q.db.Exec(ctx, deleteOTPAuthByPhone, arg.Phone, arg.ExpiresAt)
+	_, err := q.db.Exec(ctx, deleteOTPAuthByPhone,
+		arg.Phone,
+		arg.ExpiresAt,
+		arg.Aud,
+		arg.Platform,
+	)
 	return err
 }
 
 const getOTPAuth = `-- name: GetOTPAuth :one
-SELECT id, phone, otp, resend_at, expires_at, created_at, deleted_at 
+SELECT id, aud, platform, phone, otp, entered_times, resend_at, expires_at, created_at, updated_at, deleted_at 
 FROM otp_authentications 
-WHERE phone = $1 AND expires_at > $2 AND deleted_at is null
+WHERE phone = $1 AND expires_at > $2 AND aud = $3 AND platform = $4 AND deleted_at is null
 ORDER BY created_at DESC
 LIMIT 1
 `
@@ -83,18 +96,29 @@ LIMIT 1
 type GetOTPAuthParams struct {
 	Phone     string    `json:"phone"`
 	ExpiresAt time.Time `json:"expiresAt"`
+	Aud       string    `json:"aud"`
+	Platform  string    `json:"platform"`
 }
 
 func (q *Queries) GetOTPAuth(ctx context.Context, arg *GetOTPAuthParams) (*OtpAuthentication, error) {
-	row := q.db.QueryRow(ctx, getOTPAuth, arg.Phone, arg.ExpiresAt)
+	row := q.db.QueryRow(ctx, getOTPAuth,
+		arg.Phone,
+		arg.ExpiresAt,
+		arg.Aud,
+		arg.Platform,
+	)
 	var i OtpAuthentication
 	err := row.Scan(
 		&i.ID,
+		&i.Aud,
+		&i.Platform,
 		&i.Phone,
 		&i.Otp,
+		&i.EnteredTimes,
 		&i.ResendAt,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.DeletedAt,
 	)
 	return &i, err
@@ -103,18 +127,41 @@ func (q *Queries) GetOTPAuth(ctx context.Context, arg *GetOTPAuthParams) (*OtpAu
 const hasOTPAuthValid = `-- name: HasOTPAuthValid :one
 SELECT 1
 FROM otp_authentications 
-WHERE phone = $1 AND expires_at > $2 AND deleted_at is null
+WHERE phone = $1 AND expires_at > $2 AND aud = $3 AND platform = $4 AND deleted_at is null
 ORDER BY created_at DESC
 `
 
 type HasOTPAuthValidParams struct {
 	Phone     string    `json:"phone"`
 	ExpiresAt time.Time `json:"expiresAt"`
+	Aud       string    `json:"aud"`
+	Platform  string    `json:"platform"`
 }
 
 func (q *Queries) HasOTPAuthValid(ctx context.Context, arg *HasOTPAuthValidParams) (int32, error) {
-	row := q.db.QueryRow(ctx, hasOTPAuthValid, arg.Phone, arg.ExpiresAt)
+	row := q.db.QueryRow(ctx, hasOTPAuthValid,
+		arg.Phone,
+		arg.ExpiresAt,
+		arg.Aud,
+		arg.Platform,
+	)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const updateEnteredTime = `-- name: UpdateEnteredTime :exec
+UPDATE otp_authentications
+SET updated_at = now(), entered_times = $2
+WHERE id = $1
+`
+
+type UpdateEnteredTimeParams struct {
+	ID           int32 `json:"id"`
+	EnteredTimes int16 `json:"enteredTimes"`
+}
+
+func (q *Queries) UpdateEnteredTime(ctx context.Context, arg *UpdateEnteredTimeParams) error {
+	_, err := q.db.Exec(ctx, updateEnteredTime, arg.ID, arg.EnteredTimes)
+	return err
 }

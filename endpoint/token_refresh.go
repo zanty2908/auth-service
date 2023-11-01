@@ -2,63 +2,45 @@ package endpoint
 
 import (
 	db "auth-service/db/gen"
+	"auth-service/token"
 	"auth-service/utils"
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
-	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/rs/zerolog/log"
 )
 
-func (s *Module) RefreshTokenEndpoint() *kithttp.Server {
-	return s.newHttpEndpoint(
-		s.refreshToken,
-		s.decodeRefreshTokenRequest,
-	)
-}
+func (s *Module) RefreshToken(c context.Context, request interface{}) (interface{}, error) {
+	req := request.(string)
 
-type RefreshTokenParams struct {
-	RefreshToken string `json:"refreshToken"`
-}
-
-func (s *Module) decodeRefreshTokenRequest(c context.Context, r *http.Request) (interface{}, error) {
-	req := new(RefreshTokenParams)
-	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-		return nil, err
-	}
-
-	if len(req.RefreshToken) == 0 {
-		log.Error().Msg("Refresh token: bad request")
-		return nil, utils.ErrorBadRequest
-	}
-
-	return req, nil
-}
-
-func (s *Module) refreshToken(c context.Context, request interface{}) (interface{}, error) {
-	req := request.(*RefreshTokenParams)
-
-	reqRefreshPayload, err := s.tokenMaker.VerifyRefreshToken(req.RefreshToken)
+	reqRefreshPayload, err := s.tokenMaker.VerifyRefreshToken(req)
 	if err != nil {
 		log.Err(err).Msg("Refresh token: verify token error")
 		return nil, err
 	}
 
-	reqTokenID := reqRefreshPayload.ID
+	reqTokenID := reqRefreshPayload.Id
 	oauthToken, err := s.repo.GetOAuthToken(c, reqTokenID)
 	if err != nil {
 		log.Err(err).Msg("Refresh token: get oauth token error")
-		return nil, newErrorRes(http.StatusForbidden, errors.New("token_expired"))
+		return nil, NewErrorRes(http.StatusForbidden, errors.New("token_expired"))
 	}
 
-	if req.RefreshToken != oauthToken.RefreshToken {
+	if req != oauthToken.RefreshToken {
 		log.Error().Msg("Refresh token: refresh token do not machting")
 		return nil, utils.ErrorFailed
 	}
 
-	accessToken, refreshToken, accessPayload, refreshPayload, err := s.tokenMaker.CreateTokenPair(reqRefreshPayload.Data)
+	accessToken, refreshToken, accessPayload, refreshPayload, err := s.tokenMaker.CreateTokenPair(
+		token.Audience(reqRefreshPayload.Audience),
+		token.Platform(reqRefreshPayload.Platform),
+		reqRefreshPayload.Subject,
+		reqRefreshPayload.Role,
+		reqRefreshPayload.Email,
+		reqRefreshPayload.Phone,
+		reqRefreshPayload.Data,
+	)
 	if err != nil {
 		log.Error().Err(err).Msg("Refresh Token: senerate token")
 		return nil, err
@@ -68,7 +50,7 @@ func (s *Module) refreshToken(c context.Context, request interface{}) (interface
 
 		// Insert oauth token
 		oauthTokenParams := &db.CreateOAuthTokenParams{
-			TokenID:          accessPayload.ID,
+			TokenID:          accessPayload.Id,
 			UserID:           oauthToken.UserID,
 			AccessToken:      accessToken,
 			RefreshToken:     refreshToken,

@@ -1,6 +1,7 @@
-package endpoint
+package transport
 
 import (
+	"auth-service/endpoint"
 	"auth-service/language"
 	"net/http"
 )
@@ -45,15 +46,15 @@ func mappingResponse(localizer *language.Localizer, response interface{}) (int, 
 	}
 
 	switch valueType := response.(type) {
-	case *ErrorResponse:
+	case *endpoint.ErrorResponse:
 		code = valueType.StatusCode
 		if code == 0 {
-			code = MappingErrorToCode(valueType.Err)
+			code = endpoint.MappingErrorToCode(valueType.Err)
 		}
 		message = localizer.MapError(valueType.Err)
 
 	case error:
-		code = MappingErrorToCode(valueType)
+		code = endpoint.MappingErrorToCode(valueType)
 		message = localizer.MapError(valueType)
 
 	case PagingResponse:

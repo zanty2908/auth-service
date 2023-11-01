@@ -2,11 +2,24 @@
 success: "Thành công"
 error: "Thất bại"
 not_found: "Không tìm thấy"
-no_permission: "Bạn không đủ quyền truy cập"
 exist: "Tồn tại"
-bad_request: "Thông tin không đúng"
 missing_id: "Thiếu id"
 empty: ""
+
+# HTTP code error
+bad_request: "Thông tin không đúng"
+unauthorized_client: "Unauthorized client"
+access_denied: "Access denied"
+server_error: "something went wrong. Please try again!"
+temporarily_unavailable: "Temporarily unavailable"
+
+# OTP
+otp_not_resend_yet: "Chưa được gửi lại"
+otp_incorrect: "Mã OTP không hợp lệ"
+otp_expired: "Mã OTP đã hết hiệu lực"
+audience_missing: "Thiếu thông tin loại user"
+platform_missing: "Thiếu thông tin nên tảng user"
+user_type_unsupported: "User type không được hỗ trợ"
 
 # Token
 token_expired: "Token has expired"
@@ -20,6 +33,3 @@ invalid_email: "Email không đúng định dạng"
 user_blocked: "Tài khoản đã bị khóa"
 user_incorrect: "Thông tin account không đúng"
 user_deleted: "Tài khoản đã bị xóa"
-user_otp_not_resend_yet: "Chưa được gửi lại"
-user_otp_incorrect: "Mã OTP không hợp lệ"
-user_otp_expired: "Mã OTP đã hết hiệu lực"

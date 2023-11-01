@@ -19,10 +19,11 @@ type Querier interface {
 	GetOAuthToken(ctx context.Context, tokenID string) (*OauthToken, error)
 	GetOTPAuth(ctx context.Context, arg *GetOTPAuthParams) (*OtpAuthentication, error)
 	GetUser(ctx context.Context, id string) (*User, error)
-	GetUserByEmail(ctx context.Context, email *string) (*User, error)
-	GetUserByPhone(ctx context.Context, phone string) (*User, error)
+	GetUserByEmail(ctx context.Context, arg *GetUserByEmailParams) (*User, error)
+	GetUserByPhone(ctx context.Context, arg *GetUserByPhoneParams) (*User, error)
 	HasOTPAuthValid(ctx context.Context, arg *HasOTPAuthValidParams) (int32, error)
 	ListUsers(ctx context.Context, arg *ListUsersParams) ([]*User, error)
+	UpdateEnteredTime(ctx context.Context, arg *UpdateEnteredTimeParams) error
 	UpdateUser(ctx context.Context, arg *UpdateUserParams) (*User, error)
 }
 

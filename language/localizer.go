@@ -31,6 +31,8 @@ func (s Localizer) MapError(err error) string {
 			_, ok := s[err.Error()]
 			if ok {
 				errCode = err.Error()
+			} else {
+				errCode = "failed"
 			}
 		}
 	}
